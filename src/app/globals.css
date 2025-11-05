@@ -3,6 +3,8 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  --button-hover-bg: lab(77.29% 1.12 -21.86);
 }
 
 @theme inline {
@@ -16,6 +18,8 @@
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    
+    --button-hover-bg: lab(14 0.27 -5.68);
   }
 }
 
