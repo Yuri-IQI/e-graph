@@ -14,32 +14,53 @@ type FacilityStoreState = {
     removeFacility: (id: number) => void;
 };
 
-export const useFacilityStore = create<FacilityStoreState>((set) => ({
+export const useFacilityStore = create<FacilityStoreState>((set, get) => ({
     facilityNodes: [],
     selectedFacility: null,
 
-    selectFacility: (node) => set({ selectedFacility: node }),
+    selectFacility: (node) => { console.log(node); set({ selectedFacility: node })},
     clearFacilitySelection: () => set({ selectedFacility: null }),
 
-    setFacilities: (nodes) => set({ facilityNodes: nodes }),
-    addFacility: (node) =>
-        set((state) => ({ facilityNodes: [...state.facilityNodes, node] })),
+    setFacilities: (nodes) => {
+        const { selectedFacility } = get();
 
-    updateFacility: (updated) =>
+        const updatedSelected =
+            selectedFacility &&
+            nodes.find((f) => f.id === selectedFacility.id);
+
+        set({
+            facilityNodes: nodes,
+            selectedFacility: updatedSelected ? { ...updatedSelected } : selectedFacility,
+        });
+    },
+
+    addFacility: (node) => {
         set((state) => ({
-            facilityNodes: state.facilityNodes.map((f) =>
-                f.id === updated.id ? updated : f
-            ),
-            selectedFacility:
-                state.selectedFacility?.id === updated.id
-                    ? updated
-                    : state.selectedFacility,
-        })),
+            facilityNodes: [...state.facilityNodes, node],
+        }));
+    },
 
-    removeFacility: (id) =>
+    updateFacility: (updated) => {
+        set((state) => {
+            const newFacilities = state.facilityNodes.map((f) =>
+                f.id === updated.id ? { ...updated } : f
+            );
+
+            const newSelected =
+                state.selectedFacility?.id === updated.id ? { ...updated } : state.selectedFacility;
+
+            return {
+                facilityNodes: newFacilities,
+                selectedFacility: newSelected,
+            };
+        });
+    },
+
+    removeFacility: (id) => {
         set((state) => ({
             facilityNodes: state.facilityNodes.filter((f) => f.id !== id),
             selectedFacility:
                 state.selectedFacility?.id === id ? null : state.selectedFacility,
-        })),
+        }));
+    }
 }));

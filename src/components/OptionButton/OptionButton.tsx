@@ -3,12 +3,13 @@
 type OptionButtonProps = {
   label: string;
   onClick: () => void;
+  className?: string;
 };
 
-const OptionButton = ({ label, onClick }: OptionButtonProps) => {
+const OptionButton = ({ label, onClick, className }: OptionButtonProps) => {
     return (
         <button
-            className="
+            className={className ?? `
                 w-64 h-12 
                 bg-gray-500 text-white 
                 border border-gray-600 
@@ -22,7 +23,7 @@ const OptionButton = ({ label, onClick }: OptionButtonProps) => {
                 text-xl 
                 transition-colors 
                 duration-200
-            "
+            `}
             onClick={onClick}
         >
             {label}

@@ -7,11 +7,19 @@ type CollapsibleListProps = {
     title: string;
     type: NodeType;
     items: GraphNode[];
+    facilityLimit?: number;
     createItem: (node: GraphNode, type: NodeType) => void;
     removeItem: (node: GraphNode, type: NodeType) => void;
 };
 
-const CollapsibleList = ({ title, type, items, createItem, removeItem }: CollapsibleListProps) => {
+const CollapsibleList = ({
+    title,
+    type,
+    items,
+    facilityLimit,
+    createItem,
+    removeItem,
+}: CollapsibleListProps) => {
     const [isOpen, setIsOpen] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [newValue, setNewValue] = useState("");
@@ -29,7 +37,7 @@ const CollapsibleList = ({ title, type, items, createItem, removeItem }: Collaps
         }
 
         const newItem: GraphNode = {
-            id: items.length + 1,
+            id: items[items.length - 1]?.id + 1 || 1,
             value: trimmed,
         };
 
@@ -39,7 +47,6 @@ const CollapsibleList = ({ title, type, items, createItem, removeItem }: Collaps
     };
 
     const handleRemoveItem = (node: GraphNode) => {
-        setIsEditing(true);
         removeItem(node, type);
     };
 
@@ -62,36 +69,45 @@ const CollapsibleList = ({ title, type, items, createItem, removeItem }: Collaps
             >
                 <div className="flex flex-wrap justify-start items-center gap-3 p-3">
                     {items.map((item) => (
-                        <Item key={item.id} item={item} onRemove={handleRemoveItem} type={type} />
+                        <Item
+                            key={item.id}
+                            item={item}
+                            onRemove={handleRemoveItem}
+                            type={type}
+                            permitSelection={type === NodeType.FACILITY}
+                            className={type === NodeType.FACILITY && items.indexOf(item) >= facilityLimit! ? "text-red-500" : ""}
+                        />
                     ))}
 
-                    <div className="w-16 h-16 flex items-center justify-center border border-green-500 bg-zinc-700 rounded-lg hover:bg-zinc-600 cursor-pointer transition">
-                        {isEditing ? (
-                            <input
-                                type="text"
-                                autoFocus
-                                value={newValue}
-                                onChange={(e) => setNewValue(e.target.value)}
-                                onBlur={handleSubmitNewItem}
+                    {((type === NodeType.FACILITY && items.length <= ((facilityLimit! ?? Infinity) - 1)) || (type === NodeType.CLIENT)) && (
+                        <div className="
+                            w-16 h-16 flex items-center justify-center
+                            border border-green-500 bg-zinc-700 rounded-lg 
+                            hover:bg-zinc-600 cursor-pointer transition
+                        ">
+                            {isEditing ? (
+                                <input
+                                    type="text"
+                                    autoFocus
+                                    value={newValue}
+                                    onChange={(e) => setNewValue(e.target.value)}
+                                    onBlur={handleSubmitNewItem}
                                     onKeyDown={(e) => {
-                                    if (e.key === "Enter") handleSubmitNewItem();
-                                    if (e.key === "Escape") setIsEditing(false);
-                                }}
-                                className="
-                                    w-full h-full bg-transparent text-white text-center
-                                    focus:outline-none placeholder-gray-400
-                                "
-                                placeholder="Enter name"
-                            />
-                        ) : (
-                            <span
-                                onClick={handleStartCreate}
-                                className="text-gray-300 font-medium select-none"
-                            >
-                                Add +
-                            </span>
-                        )}
-                    </div>
+                                        if (e.key === "Enter") handleSubmitNewItem();
+                                        if (e.key === "Escape") setIsEditing(false);
+                                    }}
+                                    className="w-full h-full bg-transparent text-white text-center focus:outline-none placeholder-gray-400"
+                                />
+                            ) : (
+                                <span
+                                    onClick={handleStartCreate}
+                                    className="text-gray-300 font-medium select-none"
+                                >
+                                    Add +
+                                </span>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

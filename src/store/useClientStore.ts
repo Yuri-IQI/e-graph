@@ -1,8 +1,6 @@
 import { GraphNode } from "@/types/nodes";
 import { create } from "zustand";
 
-// TODO: permitir selecionar clientes por direcionais
-
 type ClientSelectState = {
     selectedClient: GraphNode | null;
     selectClient: (node: GraphNode) => void;

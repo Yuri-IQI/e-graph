@@ -6,21 +6,33 @@ export const useSyncFacilityDemands = (clientNodes: GraphNode[]) => {
     const { facilityNodes, setFacilities } = useFacilityStore();
 
     useEffect(() => {
-        if (clientNodes.length === 0 || facilityNodes.length === 0) return;
+        if (facilityNodes.length === 0) return;
 
         let hasChanged = false;
 
+        const clientIds = new Set(clientNodes.map((c) => c.id));
+
         const updatedFacilities = facilityNodes.map((facility) => {
+            const currentDemand = facility.demand ?? [];
+
             const missingClients = clientNodes.filter(
-                (client) => !facility.demand.some((d) => d.id === client.id)
+                (client) => !currentDemand.some((d) => d.id === client.id)
             );
 
-            if (missingClients.length > 0) {
+            const filteredDemand = currentDemand.filter((d) =>
+                clientIds.has(d.id)
+            );
+
+            if (
+                missingClients.length > 0 ||
+                filteredDemand.length !== currentDemand.length
+            ) {
                 hasChanged = true;
+
                 return {
                     ...facility,
                     demand: [
-                        ...facility.demand,
+                        ...filteredDemand,
                         ...missingClients.map((c) => c as FacilityDemand),
                     ],
                 };
@@ -32,5 +44,6 @@ export const useSyncFacilityDemands = (clientNodes: GraphNode[]) => {
         if (hasChanged) {
             setFacilities(updatedFacilities);
         }
+
     }, [clientNodes, facilityNodes, setFacilities]);
 };
