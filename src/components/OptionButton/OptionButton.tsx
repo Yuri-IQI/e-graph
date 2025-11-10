@@ -12,7 +12,7 @@ const OptionButton = ({ label, onClick, className }: OptionButtonProps) => {
             className={className ?? `
                 w-64 h-12 
                 bg-gray-500 text-white 
-                border border-gray-600 
+                border-xl border-neutral-800
                 rounded-lg 
                 hover:bg-stone-600 
                 hover:border-stone-700 
@@ -23,6 +23,7 @@ const OptionButton = ({ label, onClick, className }: OptionButtonProps) => {
                 text-xl 
                 transition-colors 
                 duration-200
+                shadow-md
             `}
             onClick={onClick}
         >

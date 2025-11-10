@@ -1,26 +1,28 @@
+import { DemandAssigment, SolutionSet } from "@/types/assignment";
 import { Formulation } from "@/types/enums/formulation.enum";
 import { FacilityNode } from "@/types/nodes";
-import { a } from "framer-motion/client";
 
-/**
- * Return all k-combinations of an array.
- */
-const getCombinations = <T>(arr: T[], k: number): T[][] => {
-    if (k === 0) return [[]];
+const getCombinations = <T>(arr: T[], p: number): T[][] => {
+    if (p === 0) return [[]];
     if (arr.length === 0) return [];
     const [first, ...rest] = arr;
     return [
-        ...getCombinations(rest, k - 1).map((c) => [first, ...c]),
-        ...getCombinations(rest, k),
+        ...getCombinations(rest, p - 1).map((c) => [first, ...c]),
+        ...getCombinations(rest, p),
     ];
 };
 
-/**
- * Solve the p-median problem via brute force.
- */
-const solvePMedian = (costMatrix: number[][], p: number) => {
+const solvePMedian = (
+    costMatrix: number[][],
+    p: number,
+    clientWeights: number[]
+): SolutionSet => {
     const nClients = costMatrix.length;
     const nFacilities = costMatrix[0].length;
+
+    if (clientWeights.length !== nClients) {
+        throw new Error("Client weights array size must match the number of clients.");
+    }
 
     const facilityIds = [...Array(nFacilities).keys()];
 
@@ -36,7 +38,7 @@ const solvePMedian = (costMatrix: number[][], p: number) => {
                 const cost = costMatrix[c][f];
                 if (cost < minCost) minCost = cost;
             }
-            totalCost += minCost;
+            totalCost += minCost * 1;  
         }
 
         if (totalCost < bestCost) {
@@ -45,7 +47,7 @@ const solvePMedian = (costMatrix: number[][], p: number) => {
         }
     }
 
-    const assignments = costMatrix.map((row, clientIdx) => {
+    const assignments: DemandAssigment[] = costMatrix.map((row, clientIdx) => {
         let bestFacility = -1;
         let minCost = Infinity;
         for (const f of bestFacilities) {
@@ -60,26 +62,18 @@ const solvePMedian = (costMatrix: number[][], p: number) => {
     return { bestCost, bestFacilities, assignments };
 };
 
-/**
- * Convert facility demand lists to a cost matrix:
- *   rows = clients
- *   columns = facilities
- */
 const buildCostMatrix = (facilities: FacilityNode[]): number[][] | null => {
     if (!facilities?.length) return null;
 
-    // Ensure all facilities have cost assigned
     const validFacilities = facilities.filter(f =>
         f.demand.every(d => typeof d.cost === "number" && !Number.isNaN(d.cost))
     );
 
     if (validFacilities.length === 0) return null;
 
-    // Validate consistent number of clients
     const clientCount = validFacilities[0].demand.length;
     if (!validFacilities.every(f => f.demand.length === clientCount)) return null;
 
-    // Sort client demand lists by client id, ensuring index = id
     validFacilities.forEach(f =>
         f.demand.sort((a, b) => a.id - b.id)
     );
@@ -89,19 +83,36 @@ const buildCostMatrix = (facilities: FacilityNode[]): number[][] | null => {
     );
 };
 
+const extractClientWeights = (facilities: FacilityNode[]): number[] | null => {
+    const referenceFacility = facilities.find(f => f.demand.length > 0);
+    
+    if (!referenceFacility) return null;
+
+    const sortedDemands = [...referenceFacility.demand].sort((a, b) => a.id - b.id);
+
+    return sortedDemands.map(d => d.cost);
+};
+
+
 export const solveLocationProblem = (
     type: Formulation,
     facilityLimit: number,
     facilities: FacilityNode[]
 ) => {
     const costMatrix = buildCostMatrix(facilities);
-    if (!costMatrix) {
+    if (!costMatrix || !costMatrix.length) {
         console.warn("[solveLocationProblem] Incomplete cost data or invalid facilities.");
         return null;
     }
 
+    const clientWeights = extractClientWeights(facilities);
+    if (!clientWeights || clientWeights.length !== costMatrix.length) {
+        console.warn("[solveLocationProblem] Could not determine consistent client weights.");
+        return null;
+    }
+
     if (type === Formulation.PMEDIAN) {
-        return solvePMedian(costMatrix, facilityLimit);
+        return solvePMedian(costMatrix, facilityLimit, clientWeights);
     }
 
     console.warn(`[solveLocationProblem] Formulation type '${type}' not implemented.`);

@@ -37,7 +37,7 @@ const CollapsibleList = ({
         }
 
         const newItem: GraphNode = {
-            id: items[items.length - 1]?.id + 1 || 1,
+            id: items[items.length - 1]?.id + 1 || 0,
             value: trimmed,
         };
 
@@ -51,7 +51,7 @@ const CollapsibleList = ({
     };
 
     return (
-        <div className="w-full bg-neutral-800 text-white border-l border-neutral-700 rounded-xl shadow-md">
+        <div className="w-full  bg-neutral-800 text-white border-l border-neutral-700 rounded-xl shadow-md">
             <div
                 className="flex items-center justify-between p-4 cursor-pointer select-none"
                 onClick={() => setIsOpen((prev) => !prev)}

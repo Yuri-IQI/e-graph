@@ -17,7 +17,6 @@ const SideMenu = ({ title, isMenuOpen }: SideMenuProps) => {
   const { facilityNodes, selectedFacility, updateFacility } = useFacilityStore();
   const { selectedClient } = useClientStore();
 
-  // Memoize facility for faster lookups and less re-renders
   const activeFacility = useMemo(() => {
     if (!selectedFacility) return undefined;
     return facilityNodes.find((f) => f.id === selectedFacility.id);
@@ -68,7 +67,7 @@ const SideMenu = ({ title, isMenuOpen }: SideMenuProps) => {
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: 100, opacity: 0 }}
           transition={{ type: "spring", stiffness: 120, damping: 20 }}
-          className="fixed right-0 top-0 h-full w-80 bg-neutral-800 border-l border-neutral-700 rounded-l-xl flex flex-col shadow-xl overflow-hidden z-40"
+          className="w-xs bg-neutral-800 border-l border-neutral-700 rounded-xl flex flex-col shadow-xl"
         >
           <motion.div
             layout
@@ -110,7 +109,7 @@ const SideMenu = ({ title, isMenuOpen }: SideMenuProps) => {
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25 }}
-              className="p-4 border-t border-neutral-700"
+              className="border-t border-neutral-700"
             >
               <SingleValueInput
                 label={`Set cost for ${selectedClient.value} (${selectedClient.id})`}
