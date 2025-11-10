@@ -11,7 +11,7 @@ const OptionButton = ({ label, onClick, className }: OptionButtonProps) => {
         <button
             className={className ?? `
                 w-64 h-12 
-                bg-gray-500 text-white 
+                bg-neutral-700 text-white 
                 border-xl border-neutral-800
                 rounded-lg 
                 hover:bg-stone-600 

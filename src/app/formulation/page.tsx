@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, ChangeEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import { Formulation } from "@/types/enums/formulation.enum";
 import { NodeType } from "@/types/enums/nodeType.enum";
@@ -73,6 +73,20 @@ const FormulationPage = () => {
     setResult(null);
   }, [facilityNodes, removeFacility]);
 
+  const selectNewFormulation = (e: ChangeEvent<HTMLSelectElement>) => {
+    const v = e.target.value;
+    const sp = new URLSearchParams(window.location.search);
+
+    if (v) {
+      sp.set("type", v)
+    } else {
+      sp.delete("type")
+    }
+
+    const newUrl = window.location.pathname + (sp.toString() ? `?${sp.toString()}` : "");
+    window.history.replaceState(null, "", newUrl);
+  }
+
   if (type === null) {
     return <div className="p-10 text-gray-400">Loading...</div>;
   }
@@ -80,36 +94,72 @@ const FormulationPage = () => {
   return (
     <main className="min-h-screen flex flex-row py-12 px-8 text-white">
       <section className="flex flex-col flex-1 items-center justify-center transition-all duration-300">
-        <header className="flex w-full justify-center max-w-5xl mb-10 items-center space-x-4">
-          <h1 className="text-3xl font-extrabold tracking-wide">{type} with</h1>
+        <header>
+          <div className="flex flex-row w-full justify-center max-w-5xl mb-10 items-center space-x-4">
+            <select
+              value={type ?? ""}
+              onChange={(e) => selectNewFormulation(e)}
+              className="
+                inline-block px-2 py-2 border border-gray-700 
+                rounded-md text-white bg-neutral-900 appearance-none
+                focus:outline-none focus:ring-2 focus:ring-stone-400
+                focus:border-transparent text-center text-2xl font-extrabold
+                transition-colors duration-150
+              "
+              aria-label="Formulation"
+            >
+              <option value="" disabled hidden>
+                {type ?? "Select type"}
+              </option>
 
-          <label htmlFor="facilityLimit" className="sr-only">Facility limit</label>
-          <input
-            id="facilityLimit"
-            name="facilityLimit"
-            type="number"
-            min={1}
-            step={1}
-            inputMode="numeric"
-            value={facilityLimit}
-            onChange={handleFacilityLimitChange}
-            aria-label="Facility limit"
-            className="
-              inline-block px-2 py-1 border border-gray-700 rounded-md
-              bg-transparent text-white appearance-textfield
-              focus:outline-none focus:ring-2 focus:ring-stone-400
-              focus:border-transparent text-center
-              [appearance:textfield]
-              [&::-webkit-inner-spin-button]:appearance-none
-              [&::-webkit-outer-spin-button]:appearance-none
-              font-extrabold text-2xl
-            "
-            style={{
-              width: `calc(${Math.max(String(facilityLimit).length, 1)}ch + 1.6rem)`,
-            }}
-          />
+              {Object.values(Formulation).map((value) => (
+                <option
+                  key={value}
+                  value={value}
+                  className="
+                    bg-neutral-900 text-white
+                    hover:bg-balck-700 focus:bg-black-700
+                    cursor-pointer
+                  "
+                >
+                  {value}
+                </option>
+              ))}
+            </select>
 
-          <span className="text-3xl font-extrabold tracking-wide">facilities</span>
+            <h1 className="text-3xl font-extrabold tracking-wide">with</h1>
+
+            <label htmlFor="facilityLimit" className="sr-only">Facility limit</label>
+            <input
+              id="facilityLimit"
+              name="facilityLimit"
+              type="number"
+              min={1}
+              step={1}
+              inputMode="numeric"
+              value={facilityLimit}
+              onChange={handleFacilityLimitChange}
+              aria-label="Facility limit"
+              className="
+                inline-block px-2 py-1 border border-gray-700 rounded-md
+                bg-neutral-900 text-white appearance-textfield
+                focus:outline-none focus:ring-2 focus:ring-stone-400
+                focus:border-transparent text-center
+                [appearance:textfield]
+                [&::-webkit-inner-spin-button]:appearance-none
+                [&::-webkit-outer-spin-button]:appearance-none
+                font-extrabold text-2xl
+              "
+              style={{
+                width: `calc(${Math.max(String(facilityLimit).length, 1)}ch + 1.6rem)`,
+              }}
+            />
+
+            <h1 className="text-3xl font-extrabold tracking-wide">facilities</h1>
+          </div>
+          <div className="flex flex-row w-full justify-center max-w-5xl mb-10 items-center space-x-4">
+            <h1 className="text-3xl font-extrabold tracking-wide">And</h1>
+          </div>
         </header>
 
         <div className="w-full max-w-5xl mt-4 space-y-6">
