@@ -38,7 +38,7 @@ const solvePMedian = (
                 const cost = costMatrix[c][f];
                 if (cost < minCost) minCost = cost;
             }
-            totalCost += minCost * 1;  
+            totalCost += minCost;  
         }
 
         if (totalCost < bestCost) {

@@ -11,7 +11,6 @@ import OptionButton from "@/components/OptionButton/OptionButton";
 import { useFacilityStore } from "@/store/useFacilityStore";
 import { useSyncFacilityDemands } from "@/hooks/useSyncFacilityDemands";
 import { solveLocationProblem } from "@/lib/solutionService";
-import { a } from "framer-motion/client";
 import AssignmentDisplay from "@/components/AssignmentDisplay/AssignmentDisplay";
 
 const FormulationPage = () => {
@@ -158,7 +157,7 @@ const FormulationPage = () => {
             <h1 className="text-3xl font-extrabold tracking-wide">facilities</h1>
           </div>
           <div className="flex flex-row w-full justify-center max-w-5xl mb-10 items-center space-x-4">
-            <h1 className="text-3xl font-extrabold tracking-wide">And</h1>
+            <h1 className="text-3xl font-extrabold tracking-wide"></h1>
           </div>
         </header>
 
