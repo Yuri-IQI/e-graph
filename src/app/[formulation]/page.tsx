@@ -4,31 +4,37 @@ import { useMemo, useState, useCallback, ChangeEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import { Formulation } from "@/types/enums/formulation.enum";
 import { NodeType } from "@/types/enums/nodeType.enum";
-import { FacilityNode, GraphNode } from "@/types/nodes";
+import { CoverageDemand, CoverageNode, FacilityNode, GraphNode } from "@/types/nodes";
 import CollapsibleList from "@/components/CollapsibleList/CollapsibleList";
 import SideMenu from "@/components/SideMenu/SideMenu";
 import OptionButton from "@/components/OptionButton/OptionButton";
 import { useFacilityStore } from "@/store/useFacilityStore";
 import { useSyncFacilityDemands } from "@/hooks/useSyncFacilityDemands";
-import { solveLocationProblem } from "@/lib/solutionService";
 import Canvas from "@/components/Canvas/Canvas";
 import ResultDisplay from "@/components/ResultDisplay/ResultDisplay";
 import CanvasButton from "@/components/CanvasButton/CanvasButton";
 import { ActionEnum, useCanvasActionStore } from "@/store/useCanvasActionStore";
+import { useClientStore } from "@/store/useClientStore";
+import { SolutionSet } from "@/types/assignment";
+import { solveLocationProblem } from "@/lib/common";
 
 const FormulationPage = () => {
   const searchParams = useSearchParams();
-
   const type = useMemo(
     () => (searchParams.get("type") as Formulation | null),
     [searchParams]
   );
 
-  const [clientNodes, setClientNodes] = useState<GraphNode[]>([]);
-  const [facilityLimit, setFacilityLimit] = useState<number>(1);
-  const [coverageRange, setCoverageRange] = useState<number>(0);
+  const [facilityLimit, setFacilityLimit] = useState(1);
+  const [coverageRange, setCoverageRange] = useState(0);
 
-  const [result, setResult] = useState<{ bestCost: number; bestFacilities: number[]; assignments: { client: number; facility: number; cost: number }[] } | null>(null);
+  const [result, setResult] = useState<SolutionSet | null>(null);
+
+  const {
+    clientNodes,
+    addClient,
+    removeClient
+  } = useClientStore();
 
   const {
     facilityNodes,
@@ -46,41 +52,54 @@ const FormulationPage = () => {
     [selectedFacility, facilityNodes]
   );
 
-  const handleFacilityLimitChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = Number(e.target.value);
-    setFacilityLimit(Number.isNaN(v) ? 1 : Math.max(1, Math.floor(v)));
-  }, []);
-
-  const handleCoverageRangeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = Number(e.target.value);
-    setCoverageRange(Number.isNaN(v) ? 1 : Math.max(1, Math.floor(v)));
-  }, []);
-
   const addNode = useCallback((node: GraphNode, nodeType: NodeType) => {
     if (nodeType === NodeType.CLIENT) {
-      setClientNodes(prev => [...prev, node]);
+      addClient(node);
     } else {
       const newFacility: FacilityNode = { ...node, isPlaced: false, demand: [] };
       addFacility(newFacility);
     }
-  }, [addFacility]);
+  }, [addClient, addFacility]);
 
   const delNode = useCallback((node: GraphNode, nodeType: NodeType) => {
     if (nodeType === NodeType.CLIENT) {
-      setClientNodes(prev => prev.filter(n => n.id !== node.id));
+      removeClient(node.id);
     } else {
       removeFacility(node.id);
     }
-  }, [removeFacility]);
+  }, [removeClient, removeFacility]);
 
   const handleSolve = useCallback(() => {
     if (!type) return;
-    setResult(solveLocationProblem(type, facilityLimit, facilityNodes));
-  }, [type, facilityLimit, facilityNodes]);
+
+    if (type === Formulation.PMEDIAN) {
+      setResult(
+        solveLocationProblem({
+          type,
+          facilitiesPM: facilityNodes as FacilityNode[],
+          p: facilityLimit
+        })
+      );
+      return;
+    }
+
+    if (type === Formulation.MCLP) {
+      setResult(
+        solveLocationProblem({
+          type,
+          facilitiesMC: facilityNodes as CoverageNode[],
+          demandsMC: clientNodes as CoverageDemand[],
+          radius: coverageRange,
+          p: facilityLimit
+        })
+      );
+      return;
+    }
+  }, [type, facilityNodes, clientNodes, coverageRange, facilityLimit]);
 
   const clearModel = useCallback(() => {
-    setClientNodes([]);
-    facilityNodes.forEach(f => removeFacility(f.id));
+    useClientStore.getState().setClients([]);
+    facilityNodes.forEach((f) => removeFacility(f.id));
     setResult(null);
   }, [facilityNodes, removeFacility]);
 
@@ -97,6 +116,16 @@ const FormulationPage = () => {
     const newUrl = window.location.pathname + (sp.toString() ? `?${sp.toString()}` : "");
     window.history.replaceState(null, "", newUrl);
   }
+
+  const handleFacilityLimitChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = Number(e.target.value);
+    setFacilityLimit(Number.isNaN(v) ? 1 : Math.max(1, Math.floor(v)));
+  }, []);
+
+  const handleCoverageRangeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = Number(e.target.value);
+    setCoverageRange(Number.isNaN(v) ? 1 : Math.max(1, Math.floor(v)));
+  }, []);
 
   if (type === null) {
     return <div className="p-10 text-gray-400">Loading...</div>;
@@ -167,7 +196,7 @@ const FormulationPage = () => {
 
             <h1 className="text-3xl font-extrabold tracking-wide">facilities</h1>
           </div>
-          {type === Formulation.PLMC && (
+          {type === Formulation.MCLP && (
             <div className="flex flex-row w-full justify-center max-w-5xl mb-10 items-center space-x-4">
               <h1 className="text-3xl font-extrabold tracking-wide">and</h1>
               <input
@@ -214,7 +243,7 @@ const FormulationPage = () => {
           ))}
         </div>
 
-        {type === Formulation.PLMC && (
+        {type === Formulation.MCLP && (
           <div className="flex flex-col w-full max-w-5xl mt-10 space-y-4 transition-all duration-300">
 
             <div className="flex flex-row items-center justify-center gap-4">
@@ -240,10 +269,10 @@ const FormulationPage = () => {
         </div>
 
         {result && (
-          <ResultDisplay 
+          <ResultDisplay
             bestCost={result.bestCost}
             bestFacilities={result.bestFacilities}
-            facilityNodes={facilityNodes}
+            facilityNodes={facilityNodes as FacilityNode[]}
             clientNodes={clientNodes}
             assignments={result.assignments}
           />

@@ -9,7 +9,7 @@ import { useClientStore } from "@/store/useClientStore";
 import { useFacilityStore } from "@/store/useFacilityStore";
 import { useShapeStore } from "@/store/useShapeStore";
 import { NodeType } from "@/types/enums/nodeType.enum";
-import { CoverageDemand, GraphNode } from "@/types/nodes";
+import { CoverageDemand, CoverageNode, GraphNode } from "@/types/nodes";
 
 const Canvas: React.FC = () => {
     const containerRef = useRef<HTMLDivElement | null>(null);
@@ -63,10 +63,31 @@ const Canvas: React.FC = () => {
             x: pointer.x,
             y: pointer.y,
         });
+
+        updateNode(selectedNodeType, selectedNode, pointer.x, pointer.y);
     };
 
-    const updateNode = () => {
-        
+    const updateNode = (nodeType: NodeType, node: GraphNode, posX: number, posY: number) => {
+        if (nodeType === NodeType.CLIENT) {
+            const newNode: CoverageDemand = {
+                ...node,
+                posX: posX,
+                posY: posY,
+                isPlaced: true,
+                weight: 0
+            }
+
+            useClientStore.getState().updateClient(newNode);
+        } else if (NodeType.FACILITY) {
+            const newNode: CoverageNode = {
+                ...node,
+                posX: posX,
+                posY: posY,
+                isPlaced: true
+            }
+
+            useFacilityStore.getState().updateFacility(newNode);
+        }
     }
 
     return (

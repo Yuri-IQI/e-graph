@@ -1,5 +1,5 @@
 export enum Formulation {
     PMEDIAN = "P-Median",
-    PLMC = "MCLP",
+    MCLP = "MCLP",
     OTHER = "Other"
 }

@@ -1,16 +1,16 @@
-import { FacilityNode } from "@/types/nodes";
+import { GraphNode } from "@/types/nodes";
 import { create } from "zustand";
 
 type FacilityStoreState = {
-    facilityNodes: FacilityNode[];
-    selectedFacility: FacilityNode | null;
+    facilityNodes: GraphNode[];
+    selectedFacility: GraphNode | null;
 
-    selectFacility: (node: FacilityNode) => void;
+    selectFacility: (node: GraphNode) => void;
     clearFacilitySelection: () => void;
 
-    setFacilities: (nodes: FacilityNode[]) => void;
-    addFacility: (node: FacilityNode) => void;
-    updateFacility: (updated: FacilityNode) => void;
+    setFacilities: (nodes: GraphNode[]) => void;
+    addFacility: (node: GraphNode) => void;
+    updateFacility: (updated: GraphNode) => void;
     removeFacility: (id: number) => void;
 };
 
