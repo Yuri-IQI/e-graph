@@ -11,7 +11,10 @@ import OptionButton from "@/components/OptionButton/OptionButton";
 import { useFacilityStore } from "@/store/useFacilityStore";
 import { useSyncFacilityDemands } from "@/hooks/useSyncFacilityDemands";
 import { solveLocationProblem } from "@/lib/solutionService";
-import AssignmentDisplay from "@/components/AssignmentDisplay/AssignmentDisplay";
+import Canvas from "@/components/Canvas/Canvas";
+import ResultDisplay from "@/components/ResultDisplay/ResultDisplay";
+import CanvasButton from "@/components/CanvasButton/CanvasButton";
+import { ActionEnum, useCanvasActionStore } from "@/store/useCanvasActionStore";
 
 const FormulationPage = () => {
   const searchParams = useSearchParams();
@@ -22,7 +25,9 @@ const FormulationPage = () => {
   );
 
   const [clientNodes, setClientNodes] = useState<GraphNode[]>([]);
-  const [facilityLimit, setFacilityLimit] = useState(1);
+  const [facilityLimit, setFacilityLimit] = useState<number>(1);
+  const [coverageRange, setCoverageRange] = useState<number>(0);
+
   const [result, setResult] = useState<{ bestCost: number; bestFacilities: number[]; assignments: { client: number; facility: number; cost: number }[] } | null>(null);
 
   const {
@@ -31,6 +36,8 @@ const FormulationPage = () => {
     removeFacility,
     selectedFacility,
   } = useFacilityStore();
+
+  const { selectAction } = useCanvasActionStore();
 
   useSyncFacilityDemands(clientNodes);
 
@@ -42,6 +49,11 @@ const FormulationPage = () => {
   const handleFacilityLimitChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const v = Number(e.target.value);
     setFacilityLimit(Number.isNaN(v) ? 1 : Math.max(1, Math.floor(v)));
+  }, []);
+
+  const handleCoverageRangeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = Number(e.target.value);
+    setCoverageRange(Number.isNaN(v) ? 1 : Math.max(1, Math.floor(v)));
   }, []);
 
   const addNode = useCallback((node: GraphNode, nodeType: NodeType) => {
@@ -128,7 +140,6 @@ const FormulationPage = () => {
 
             <h1 className="text-3xl font-extrabold tracking-wide">with</h1>
 
-            <label htmlFor="facilityLimit" className="sr-only">Facility limit</label>
             <input
               id="facilityLimit"
               name="facilityLimit"
@@ -156,9 +167,37 @@ const FormulationPage = () => {
 
             <h1 className="text-3xl font-extrabold tracking-wide">facilities</h1>
           </div>
-          <div className="flex flex-row w-full justify-center max-w-5xl mb-10 items-center space-x-4">
-            <h1 className="text-3xl font-extrabold tracking-wide"></h1>
-          </div>
+          {type === Formulation.PLMC && (
+            <div className="flex flex-row w-full justify-center max-w-5xl mb-10 items-center space-x-4">
+              <h1 className="text-3xl font-extrabold tracking-wide">and</h1>
+              <input
+                id="coverageRange"
+                name="coverageRange"
+                type="number"
+                min={1}
+                step={1}
+                inputMode="numeric"
+                value={coverageRange}
+                onChange={handleCoverageRangeChange}
+                aria-label="Coverage Range"
+                className="
+                  inline-block px-2 py-1 border border-gray-700 rounded-md
+                  bg-neutral-900 text-white appearance-textfield
+                  focus:outline-none focus:ring-2 focus:ring-stone-400
+                  focus:border-transparent text-center
+                  [appearance:textfield]
+                  [&::-webkit-inner-spin-button]:appearance-none
+                  [&::-webkit-outer-spin-button]:appearance-none
+                  font-extrabold text-2xl
+                "
+                style={{
+                  width: `calc(${Math.max(String(coverageRange).length, 1)}ch + 1.6rem)`,
+                }}
+              />
+
+              <h1 className="text-3xl font-extrabold tracking-wide">coverage range</h1>
+            </div>
+          )}
         </header>
 
         <div className="w-full max-w-5xl mt-4 space-y-6">
@@ -175,33 +214,39 @@ const FormulationPage = () => {
           ))}
         </div>
 
+        {type === Formulation.PLMC && (
+          <div className="flex flex-col w-full max-w-5xl mt-10 space-y-4 transition-all duration-300">
+
+            <div className="flex flex-row items-center justify-center gap-4">
+              {Object.values(ActionEnum).map((act) => (
+                <CanvasButton
+                  key={act}
+                  label={act}
+                  onClick={() => selectAction(act)}
+                />
+              ))}
+            </div>
+
+            <div className="w-full flex justify-center">
+              <Canvas />
+            </div>
+
+          </div>
+        )}
+
         <div className="flex w-full max-w-5xl mt-4 justify-between p-4">
           <OptionButton label="Solve" onClick={handleSolve} />
           <OptionButton label="Reset" onClick={() => clearModel()} />
         </div>
 
         {result && (
-          <section className="flex w-full flex-col max-w-5xl p-4 mt-4 bg-neutral-900 border border-neutral-700 rounded-2xl shadow-lg">
-            <h1 className="text-2xl font-bold mb-4 text-white">Solution Result</h1>
-
-            <div className="flex flex-col sm:flex-row sm:justify-between bg-neutral-800 rounded-xl p-4 mb-4 border border-neutral-700">
-              <div>
-                <p className="mb-1">
-                  <span className="font-medium text-gray-300">Total Cost:</span>{" "}
-                  <span className="text-amber-300 font-semibold">{result.bestCost}</span>
-                </p>
-                <p>
-                  <span className="font-medium text-gray-300">Opened Facilities:</span>{" "}
-                  <span className="text-amber-300">{result.bestFacilities.map(bf => facilityNodes.find(f => f.id === bf)?.value).join(", ")}</span>
-                </p>
-              </div>
-            </div>
-
-            <div>
-              <h2 className="text-xl font-semibold mb-2">Assignments</h2>
-              <AssignmentDisplay clientNodes={clientNodes} assignments={result.assignments} />
-            </div>
-          </section>
+          <ResultDisplay 
+            bestCost={result.bestCost}
+            bestFacilities={result.bestFacilities}
+            facilityNodes={facilityNodes}
+            clientNodes={clientNodes}
+            assignments={result.assignments}
+          />
         )}
       </section>
 

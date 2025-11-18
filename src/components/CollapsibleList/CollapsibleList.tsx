@@ -2,6 +2,7 @@ import { useState } from "react";
 import { NodeType } from "@/types/enums/nodeType.enum";
 import { GraphNode } from "@/types/nodes";
 import Item from "../Item/Item";
+import { useShapeStore } from "@/store/useShapeStore";
 
 type CollapsibleListProps = {
     title: string;
@@ -23,7 +24,7 @@ const CollapsibleList = ({
     const [isOpen, setIsOpen] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [newValue, setNewValue] = useState("");
-
+    
     const handleStartCreate = () => {
         setIsEditing(true);
         setNewValue("");
@@ -38,6 +39,7 @@ const CollapsibleList = ({
 
         const newItem: GraphNode = {
             id: items[items.length - 1]?.id + 1 || 0,
+            isPlaced: false,
             value: trimmed,
         };
 
@@ -46,7 +48,10 @@ const CollapsibleList = ({
         setNewValue("");
     };
 
+    const { delShape } = useShapeStore();
+
     const handleRemoveItem = (node: GraphNode) => {
+        delShape(node.id);
         removeItem(node, type);
     };
 

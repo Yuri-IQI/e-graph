@@ -1,6 +1,7 @@
 export interface GraphNode {
     id: number;
     value: string;
+    isPlaced: boolean;
 };
 
 export interface FacilityDemand extends GraphNode {
@@ -8,7 +9,6 @@ export interface FacilityDemand extends GraphNode {
 };
 
 export interface FacilityNode extends GraphNode {
-    isPlaced: boolean;
     demand: FacilityDemand[];
 };
 
@@ -19,5 +19,5 @@ export interface CoverageNode extends GraphNode {
 
 export interface CoverageDemand extends CoverageNode {
     weight: number,
-    assignedFacilities: CoverageNode[]
+    assignedFacilities?: CoverageNode[]
 }
