@@ -1,7 +1,7 @@
 import { useClientStore } from "@/store/useClientStore";
 import { useFacilityStore } from "@/store/useFacilityStore";
 import { NodeType } from "@/types/enums/nodeType.enum";
-import { FacilityNode, GraphNode } from "@/types/nodes";
+import { FacilityDemand, FacilityNode, GraphNode } from "@/types/nodes";
 
 type ItemProps = {
     item: GraphNode;
@@ -27,7 +27,7 @@ const Item = ({ item, onRemove, type, permitSelection, className, cost }: ItemPr
             if (selectedClient?.id === item.id) {
                 clearClientSelection();
             } else {
-                selectClient(item);
+                selectClient(item as FacilityDemand);
             }
         }
     };

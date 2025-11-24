@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "",
+  title: "απλός κατανεμητής",
   description: "Tá aí né",
 };
 

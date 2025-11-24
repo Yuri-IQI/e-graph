@@ -1,16 +1,18 @@
-import { GraphNode } from "@/types/nodes";
+import { CoverageDemand, FacilityDemand, GraphNode } from "@/types/nodes";
 import { create } from "zustand";
 
-type ClientStoreState = {
-    clientNodes: GraphNode[];
-    selectedClient: GraphNode | null;
+export type ClientUnion = FacilityDemand | CoverageDemand;
 
-    selectClient: (node: GraphNode) => void;
+type ClientStoreState = {
+    clientNodes: ClientUnion[];
+    selectedClient: ClientUnion | null;
+
+    selectClient: (node: ClientUnion) => void;
     clearClientSelection: () => void;
 
-    setClients: (nodes: GraphNode[]) => void;
-    addClient: (node: GraphNode) => void;
-    updateClient: (updated: GraphNode) => void;
+    setClients: (nodes: ClientUnion[]) => void;
+    addClient: (node: ClientUnion) => void;
+    updateClient: (updated: ClientUnion) => void;
     removeClient: (id: number) => void;
 };
 

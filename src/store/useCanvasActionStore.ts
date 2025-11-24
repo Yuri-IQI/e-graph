@@ -1,10 +1,9 @@
 import { create } from "zustand";
 
 export enum ActionEnum {
-    POSITION_CLIENT = "Position Client",
-    POSITION_FACILITY = "Position Facility",
-    EDIT = "Edit",
-    DEL = "Delete"
+    POSITION_CLIENT = "Place Client",
+    POSITION_FACILITY = "Place Facility",
+    AUTO_ALLOCATE = "Auto Facility Placement"
 }
 
 type CanvasActionState = {

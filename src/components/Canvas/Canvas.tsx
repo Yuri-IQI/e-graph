@@ -5,7 +5,7 @@ import { Stage, Layer, Circle, Text, Group, Line } from "react-konva";
 import { KonvaEventObject } from "konva/lib/Node";
 
 import { useCanvasActionStore, ActionEnum } from "@/store/useCanvasActionStore";
-import { useClientStore } from "@/store/useClientStore";
+import { ClientUnion, useClientStore } from "@/store/useClientStore";
 import { useFacilityStore } from "@/store/useFacilityStore";
 import { useShapeStore } from "@/store/useShapeStore";
 
@@ -13,6 +13,7 @@ import { NodeType } from "@/types/enums/nodeType.enum";
 import { CoverageDemand, CoverageNode, GraphNode } from "@/types/nodes";
 import { Shape } from "@/types/geometries/shape";
 import { DemandAssigment, SolutionSet } from "@/types/assignment";
+import { autoAllocateByPairwiseMidpoints } from "@/lib/solveMCLP";
 
 interface CanvasProps {
     radius: number;
@@ -23,7 +24,7 @@ const Canvas: React.FC<CanvasProps> = ({ radius, solution }) => {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [size, setSize] = useState({ width: 800, height: 600 });
 
-    const { activeAction } = useCanvasActionStore();
+    const { activeAction, clearActionSelection } = useCanvasActionStore();
     const { shapes, addShape, updateShape, delShape } = useShapeStore();
 
     const updateNodeInStore = useCallback(
@@ -60,6 +61,68 @@ const Canvas: React.FC<CanvasProps> = ({ radius, solution }) => {
         window.addEventListener("resize", update);
         return () => window.removeEventListener("resize", update);
     }, []);
+
+    useEffect(() => {
+        if (activeAction !== ActionEnum.AUTO_ALLOCATE) return;
+
+        const handleAutoAllocateFacilities = () => {
+            const { clientNodes } = useClientStore.getState();
+
+            const demandCoverages = clientNodes.filter(
+                (node): node is ClientUnion & { posX: number; posY: number } =>
+                    "posX" in node && "posY" in node
+            );
+
+            if (demandCoverages.length === 0) {
+                console.warn("No demand nodes with coordinates for auto-allocation.");
+                return;
+            }
+
+            if (!demandCoverages) return;
+
+            if (!demandCoverages.length) {
+                console.warn("No demand nodes for auto-allocate.");
+                return;
+            }
+
+            const { bestPositions } =
+                autoAllocateByPairwiseMidpoints(demandCoverages, radius);
+
+            if (!bestPositions.length) {
+                console.warn("Auto allocation returned no positions.");
+                return;
+            }
+
+            const facilities = useFacilityStore.getState().facilityNodes;
+            const moveCount = Math.min(facilities.length, bestPositions.length);
+
+            for (let i = 0; i < moveCount; i++) {
+                const f = facilities[i];
+                const pos = bestPositions[i];
+
+                useFacilityStore.getState().updateFacility({
+                    ...f,
+                    posX: pos.x,
+                    posY: pos.y,
+                    isPlaced: true
+                });
+
+                const shape = useShapeStore
+                    .getState()
+                    .shapes.find(s => s.nodeId === f.id && s.nodeType === NodeType.FACILITY);
+
+                if (shape) {
+                    useShapeStore.getState().updateShape(shape.shapeId, {
+                        x: pos.x,
+                        y: pos.y
+                    });
+                }
+            }
+        };
+
+        handleAutoAllocateFacilities();
+        clearActionSelection();
+    }, [activeAction, clearActionSelection, radius]);
 
     const handleCanvasClick = (e: KonvaEventObject<MouseEvent>) => {
         if (
@@ -109,7 +172,7 @@ const Canvas: React.FC<CanvasProps> = ({ radius, solution }) => {
     };
 
     const handleNodeDelete = (s: Shape) => (e: KonvaEventObject<MouseEvent>) => {
-        if (activeAction !== ActionEnum.DEL && !e.evt.shiftKey) return;
+        if (!e.evt.shiftKey) return;
 
         delShape(s.shapeId);
 
@@ -204,12 +267,12 @@ const Canvas: React.FC<CanvasProps> = ({ radius, solution }) => {
 
                                 <Circle
                                     radius={10}
-                                    fill={s.nodeType === NodeType.CLIENT 
-                                        ? "#6c839bff" 
+                                    fill={s.nodeType === NodeType.CLIENT
+                                        ? "#6c839bff"
                                         : node.isPlaced
                                             ? "#90bd78ff"
                                             : "#999677ff"
-                                        }
+                                    }
                                     stroke="#ffffff"
                                 />
 

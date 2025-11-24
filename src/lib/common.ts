@@ -43,11 +43,9 @@ export const solveLocationProblem = ({
     if (type === Formulation.MCLP) {
         if (!facilitiesMC || !demandsMC) return null;
 
-        const demands = demandsMC;
-
         const coverageMatrix = buildCoverageMatrix(
             facilitiesMC,
-            demands,
+            demandsMC,
             radius!
         );
 

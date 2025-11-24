@@ -6,7 +6,6 @@ import { Formulation } from "@/types/enums/formulation.enum";
 import { NodeType } from "@/types/enums/nodeType.enum";
 import { CoverageDemand, CoverageNode, FacilityDemand, FacilityNode, GraphNode } from "@/types/nodes";
 import CollapsibleList from "@/components/CollapsibleList/CollapsibleList";
-import SideMenu from "@/components/SideMenu/SideMenu";
 import OptionButton from "@/components/OptionButton/OptionButton";
 import { useFacilityStore } from "@/store/useFacilityStore";
 import { useSyncFacilityDemands } from "@/hooks/useSyncFacilityDemands";
@@ -52,7 +51,7 @@ const FormulationPage = () => {
 
   const addNode = useCallback((node: GraphNode, nodeType: NodeType) => {
     if (nodeType === NodeType.CLIENT) {
-      addClient(node);
+      addClient(node as FacilityDemand);
     } else {
       const newFacility: FacilityNode = { ...node, isPlaced: false, demand: [] };
       addFacility(newFacility);
