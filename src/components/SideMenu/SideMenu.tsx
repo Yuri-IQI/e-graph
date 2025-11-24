@@ -8,6 +8,8 @@ import { NodeType } from "@/types/enums/nodeType.enum";
 import NodeContainer from "../NodeContainer/NodeContainer";
 import SingleValueInput from "../SingleValueInput/SingleValueInput";
 
+import type { FacilityNode, FacilityDemand } from "@/types/nodes";
+
 type SideMenuProps = {
   title: string;
   isMenuOpen: boolean;
@@ -17,10 +19,11 @@ const SideMenu = ({ title, isMenuOpen }: SideMenuProps) => {
   const { facilityNodes, selectedFacility, updateFacility } = useFacilityStore();
   const { selectedClient } = useClientStore();
 
-  const activeFacility = useMemo(() => {
+  const activeFacility = useMemo<FacilityNode | undefined>(() => {
     if (!selectedFacility) return undefined;
-    return facilityNodes.find((f) => f.id === selectedFacility.id);
+    return facilityNodes.find((f) => f.id === selectedFacility.id) as FacilityNode | undefined;
   }, [selectedFacility, facilityNodes]);
+
 
   const handleCostSubmit = useCallback(
     (facilityId: number, clientId: number, rawValue: string) => {
@@ -30,11 +33,13 @@ const SideMenu = ({ title, isMenuOpen }: SideMenuProps) => {
       const facility = facilityNodes.find((f) => f.id === facilityId);
       if (!facility) return;
 
-      const updatedFacility = {
+      const updatedDemand: FacilityDemand[] = (facility as FacilityNode).demand.map(
+        (c) => (c.id === clientId ? { ...c, cost } : c)
+      );
+
+      const updatedFacility: FacilityNode = {
         ...facility,
-        demand: facility.demand.map((c) =>
-          c.id === clientId ? { ...c, cost } : c
-        ),
+        demand: updatedDemand,
       };
 
       updateFacility(updatedFacility);
@@ -67,7 +72,7 @@ const SideMenu = ({ title, isMenuOpen }: SideMenuProps) => {
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: 100, opacity: 0 }}
           transition={{ type: "spring", stiffness: 120, damping: 20 }}
-          className="w-xs bg-neutral-800 border-l border-neutral-700 rounded-xl flex flex-col shadow-xl"
+          className="w-xs h-screen bg-neutral-800 border-l border-neutral-700 rounded-xl flex flex-col shadow-xl"
         >
           <motion.div
             layout
@@ -78,9 +83,8 @@ const SideMenu = ({ title, isMenuOpen }: SideMenuProps) => {
                 : { opacity: 0.5, y: -4, scale: 0.995 }
             }
             transition={{ type: "spring", stiffness: 200, damping: 24 }}
-            className={`p-6 border-b border-neutral-700 ${
-              !activeFacility ? "pointer-events-none" : ""
-            }`}
+            className={`p-6 border-b border-neutral-700 ${!activeFacility ? "pointer-events-none" : ""
+              }`}
           >
             <h1 className="text-lg font-semibold text-white mb-1">{title}</h1>
             {activeFacility ? (

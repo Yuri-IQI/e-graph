@@ -18,7 +18,7 @@ export const useFacilityStore = create<FacilityStoreState>((set, get) => ({
     facilityNodes: [],
     selectedFacility: null,
 
-    selectFacility: (node) => { console.log(node); set({ selectedFacility: node })},
+    selectFacility: (node) => {set({ selectedFacility: node })},
     clearFacilitySelection: () => set({ selectedFacility: null }),
 
     setFacilities: (nodes) => {

@@ -1,5 +1,5 @@
 import { Formulation } from "@/types/enums/formulation.enum";
-import { CoverageDemand, CoverageNode, FacilityNode } from "@/types/nodes";
+import { CoverageDemand, CoverageNode, FacilityDemand, FacilityNode, GraphNode } from "@/types/nodes";
 import { buildCostMatrix, extractClientWeights, solvePMedian } from "./solvePMedian";
 import { buildCoverageMatrix, solveMCLP } from "./solveMCLP";
 import { SolutionSet } from "@/types/assignment";
@@ -43,15 +43,19 @@ export const solveLocationProblem = ({
     if (type === Formulation.MCLP) {
         if (!facilitiesMC || !demandsMC) return null;
 
+        const demands = demandsMC;
+
         const coverageMatrix = buildCoverageMatrix(
             facilitiesMC,
-            demandsMC,
+            demands,
             radius!
         );
-        const weights = demandsMC.map(d => d.weight);
 
-        return solveMCLP(coverageMatrix, weights, p);
+        const res = solveMCLP(coverageMatrix, p);
+
+        return res;
     }
+
 
     console.warn(`[solveLocationProblem] Unknown type`, type);
     return null;

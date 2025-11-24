@@ -8,13 +8,20 @@ export const buildCoverageMatrix = (
     demands: CoverageDemand[],
     radius: number
 ): number[][] => {
+    if (!facilities.length || !demands.length) {
+        console.warn("Empty facilities or demands in buildCoverageMatrix", { facilities, demands, radius });
+    }
 
     return demands.map(d =>
         facilities.map(f => {
+            if (d.posX == null || d.posY == null || f.posX == null || f.posY == null)
+                return 0;
+
             const dist = Math.sqrt(
                 (d.posX - f.posX) ** 2 +
                 (d.posY - f.posY) ** 2
             );
+
             return dist <= radius ? 1 : 0;
         })
     );
@@ -22,7 +29,6 @@ export const buildCoverageMatrix = (
 
 export const solveMCLP = (
     coverageMatrix: number[][],
-    weights: number[],
     p: number
 ): SolutionSet => {
 
@@ -35,15 +41,15 @@ export const solveMCLP = (
     let bestFacilities: number[] = [];
 
     for (const combo of getCombinations(facilityIds, p)) {
-        let coveredWeight = 0;
+        let coveredCount = 0;
 
         for (let d = 0; d < nDemands; d++) {
             const isCovered = combo.some(f => coverageMatrix[d][f] === 1);
-            if (isCovered) coveredWeight += weights[d];
+            if (isCovered) coveredCount += 1;
         }
 
-        if (coveredWeight > bestCoverage) {
-            bestCoverage = coveredWeight;
+        if (coveredCount > bestCoverage) {
+            bestCoverage = coveredCount;
             bestFacilities = combo;
         }
     }
@@ -61,7 +67,7 @@ export const solveMCLP = (
         assignments.push({
             client: d,
             facility: assigned,
-            cost: assigned === -1 ? Infinity : 0
+            cost: assigned === -1 ? 0 : 1
         });
     }
 

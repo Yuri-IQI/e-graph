@@ -37,18 +37,19 @@ export const useClientStore = create<ClientStoreState>((set, get) => ({
 
     updateClient: (updated) =>
         set((st) => {
-            const newClients = st.clientNodes.map((c) =>
-                c.id === updated.id ? { ...updated } : c
-            );
+            const idx = st.clientNodes.findIndex(c => c.id === updated.id);
+            if (idx === -1) return st;
 
-            const newSelected =
-                st.selectedClient?.id === updated.id ? updated : st.selectedClient;
+            const newClients = [...st.clientNodes];
+            newClients[idx] = updated;
 
             return {
                 clientNodes: newClients,
-                selectedClient: newSelected,
+                selectedClient:
+                    st.selectedClient?.id === updated.id ? updated : st.selectedClient,
             };
         }),
+
 
     removeClient: (id) =>
         set((st) => ({

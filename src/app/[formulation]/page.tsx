@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState, useCallback, ChangeEvent } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { Formulation } from "@/types/enums/formulation.enum";
 import { NodeType } from "@/types/enums/nodeType.enum";
-import { CoverageDemand, CoverageNode, FacilityNode, GraphNode } from "@/types/nodes";
+import { CoverageDemand, CoverageNode, FacilityDemand, FacilityNode, GraphNode } from "@/types/nodes";
 import CollapsibleList from "@/components/CollapsibleList/CollapsibleList";
 import SideMenu from "@/components/SideMenu/SideMenu";
 import OptionButton from "@/components/OptionButton/OptionButton";
@@ -17,6 +17,8 @@ import { ActionEnum, useCanvasActionStore } from "@/store/useCanvasActionStore";
 import { useClientStore } from "@/store/useClientStore";
 import { SolutionSet } from "@/types/assignment";
 import { solveLocationProblem } from "@/lib/common";
+import Header from "@/components/Header/Header";
+import { useShapeStore } from "@/store/useShapeStore";
 
 const FormulationPage = () => {
   const searchParams = useSearchParams();
@@ -41,16 +43,12 @@ const FormulationPage = () => {
     addFacility,
     removeFacility,
     selectedFacility,
+    updateFacility
   } = useFacilityStore();
 
   const { selectAction } = useCanvasActionStore();
 
   useSyncFacilityDemands(clientNodes);
-
-  const isMenuOpen = useMemo(
-    () => Boolean(selectedFacility && facilityNodes.some(n => n.id === selectedFacility.id)),
-    [selectedFacility, facilityNodes]
-  );
 
   const addNode = useCallback((node: GraphNode, nodeType: NodeType) => {
     if (nodeType === NodeType.CLIENT) {
@@ -100,10 +98,13 @@ const FormulationPage = () => {
   const clearModel = useCallback(() => {
     useClientStore.getState().setClients([]);
     facilityNodes.forEach((f) => removeFacility(f.id));
+    useShapeStore.getState().shapes.forEach((s) => {
+      useShapeStore.getState().delShape(s.shapeId);
+    })
     setResult(null);
   }, [facilityNodes, removeFacility]);
 
-  const selectNewFormulation = (e: ChangeEvent<HTMLSelectElement>) => {
+  const selectNewFormulation = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const v = e.target.value;
     const sp = new URLSearchParams(window.location.search);
 
@@ -127,6 +128,37 @@ const FormulationPage = () => {
     setCoverageRange(Number.isNaN(v) ? 1 : Math.max(1, Math.floor(v)));
   }, []);
 
+  const handleCostSubmit = useCallback(
+    (facilityId: number, clientId: number, rawValue: string) => {
+      const cost = Number(rawValue);
+      if (Number.isNaN(cost)) return;
+
+      const facility = facilityNodes.find((f) => f.id === facilityId);
+      if (!facility) return;
+
+      const updatedDemand: FacilityDemand[] = (facility as FacilityNode).demand.map(
+        (c) => (c.id === clientId ? { ...c, cost } : c)
+      );
+
+      const updatedFacility: FacilityNode = {
+        ...facility,
+        demand: updatedDemand,
+      };
+
+      updateFacility(updatedFacility);
+    },
+    [facilityNodes, updateFacility]
+  );
+
+  const handleClientCostSubmit = useCallback(
+    (clientId: number, val: string) => {
+      if (!selectedFacility) return;
+      handleCostSubmit(selectedFacility.id, clientId, val);
+    },
+    [selectedFacility, handleCostSubmit]
+  );
+
+
   if (type === null) {
     return <div className="p-10 text-gray-400">Loading...</div>;
   }
@@ -134,100 +166,14 @@ const FormulationPage = () => {
   return (
     <main className="min-h-screen flex flex-row py-12 px-8 text-white">
       <section className="flex flex-col flex-1 items-center justify-center transition-all duration-300">
-        <header>
-          <div className="flex flex-row w-full justify-center max-w-5xl mb-10 items-center space-x-4">
-            <select
-              value={type ?? ""}
-              onChange={(e) => selectNewFormulation(e)}
-              className="
-                inline-block px-2 py-2 border border-gray-700 
-                rounded-md text-white bg-neutral-900 appearance-none
-                focus:outline-none focus:ring-2 focus:ring-stone-400
-                focus:border-transparent text-center text-2xl font-extrabold
-                transition-colors duration-150
-              "
-              aria-label="Formulation"
-            >
-              <option value="" disabled hidden>
-                {type ?? "Select type"}
-              </option>
-
-              {Object.values(Formulation).map((value) => (
-                <option
-                  key={value}
-                  value={value}
-                  className="
-                    bg-neutral-900 text-white
-                    hover:bg-balck-700 focus:bg-black-700
-                    cursor-pointer
-                  "
-                >
-                  {value}
-                </option>
-              ))}
-            </select>
-
-            <h1 className="text-3xl font-extrabold tracking-wide">with</h1>
-
-            <input
-              id="facilityLimit"
-              name="facilityLimit"
-              type="number"
-              min={1}
-              step={1}
-              inputMode="numeric"
-              value={facilityLimit}
-              onChange={handleFacilityLimitChange}
-              aria-label="Facility limit"
-              className="
-                inline-block px-2 py-1 border border-gray-700 rounded-md
-                bg-neutral-900 text-white appearance-textfield
-                focus:outline-none focus:ring-2 focus:ring-stone-400
-                focus:border-transparent text-center
-                [appearance:textfield]
-                [&::-webkit-inner-spin-button]:appearance-none
-                [&::-webkit-outer-spin-button]:appearance-none
-                font-extrabold text-2xl
-              "
-              style={{
-                width: `calc(${Math.max(String(facilityLimit).length, 1)}ch + 1.6rem)`,
-              }}
-            />
-
-            <h1 className="text-3xl font-extrabold tracking-wide">facilities</h1>
-          </div>
-          {type === Formulation.MCLP && (
-            <div className="flex flex-row w-full justify-center max-w-5xl mb-10 items-center space-x-4">
-              <h1 className="text-3xl font-extrabold tracking-wide">and</h1>
-              <input
-                id="coverageRange"
-                name="coverageRange"
-                type="number"
-                min={1}
-                step={1}
-                inputMode="numeric"
-                value={coverageRange}
-                onChange={handleCoverageRangeChange}
-                aria-label="Coverage Range"
-                className="
-                  inline-block px-2 py-1 border border-gray-700 rounded-md
-                  bg-neutral-900 text-white appearance-textfield
-                  focus:outline-none focus:ring-2 focus:ring-stone-400
-                  focus:border-transparent text-center
-                  [appearance:textfield]
-                  [&::-webkit-inner-spin-button]:appearance-none
-                  [&::-webkit-outer-spin-button]:appearance-none
-                  font-extrabold text-2xl
-                "
-                style={{
-                  width: `calc(${Math.max(String(coverageRange).length, 1)}ch + 1.6rem)`,
-                }}
-              />
-
-              <h1 className="text-3xl font-extrabold tracking-wide">coverage range</h1>
-            </div>
-          )}
-        </header>
+        <Header
+          type={type}
+          selectNewType={selectNewFormulation}
+          facilityLimit={facilityLimit}
+          handleFacilityLimitChange={handleFacilityLimitChange}
+          coverageRange={coverageRange ?? null}
+          handleCoverageRangeChange={handleCoverageRangeChange}
+        />
 
         <div className="w-full max-w-5xl mt-4 space-y-6">
           {Object.values(NodeType).map(nodeType => (
@@ -239,6 +185,8 @@ const FormulationPage = () => {
               facilityLimit={nodeType === NodeType.FACILITY ? facilityLimit : undefined}
               createItem={addNode}
               removeItem={delNode}
+              handleCostSubmit={handleClientCostSubmit}
+              formulation={type}
             />
           ))}
         </div>
@@ -257,7 +205,7 @@ const FormulationPage = () => {
             </div>
 
             <div className="w-full flex justify-center">
-              <Canvas />
+              <Canvas radius={coverageRange} solution={result} />
             </div>
 
           </div>
@@ -268,7 +216,7 @@ const FormulationPage = () => {
           <OptionButton label="Reset" onClick={() => clearModel()} />
         </div>
 
-        {result && (
+        {result && type === Formulation.PMEDIAN && (
           <ResultDisplay
             bestCost={result.bestCost}
             bestFacilities={result.bestFacilities}
@@ -278,8 +226,6 @@ const FormulationPage = () => {
           />
         )}
       </section>
-
-      {isMenuOpen && <SideMenu title="Facility Demand Menu" isMenuOpen={isMenuOpen} />}
     </main>
   );
 };

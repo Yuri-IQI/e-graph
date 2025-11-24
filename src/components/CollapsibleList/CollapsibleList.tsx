@@ -1,30 +1,44 @@
-import { useState } from "react";
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
 import { NodeType } from "@/types/enums/nodeType.enum";
-import { GraphNode } from "@/types/nodes";
+import { GraphNode, FacilityDemand, FacilityNode } from "@/types/nodes";
+import { Shape } from "@/types/geometries/shape";
+
 import Item from "../Item/Item";
 import { useShapeStore } from "@/store/useShapeStore";
+import { useFacilityStore } from "@/store/useFacilityStore";
+import NodeCostEditor from "../NodeCostEditor/NodeCostEditor";
+import { Formulation } from "@/types/enums/formulation.enum";
 
-type CollapsibleListProps = {
+type Props = {
     title: string;
     type: NodeType;
     items: GraphNode[];
     facilityLimit?: number;
     createItem: (node: GraphNode, type: NodeType) => void;
     removeItem: (node: GraphNode, type: NodeType) => void;
+    handleCostSubmit?: (clientId: number, val: string) => void;
+    formulation: Formulation;
 };
 
 const CollapsibleList = ({
     title,
     type,
     items,
-    facilityLimit,
     createItem,
     removeItem,
-}: CollapsibleListProps) => {
+    handleCostSubmit,
+    formulation
+}: Props) => {
     const [isOpen, setIsOpen] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [newValue, setNewValue] = useState("");
-    
+
+    const { shapes, delShape } = useShapeStore();
+    const { selectedFacility } = useFacilityStore();
+
+
     const handleStartCreate = () => {
         setIsEditing(true);
         setNewValue("");
@@ -40,7 +54,7 @@ const CollapsibleList = ({
         const newItem: GraphNode = {
             id: items[items.length - 1]?.id + 1 || 0,
             isPlaced: false,
-            value: trimmed,
+            value: trimmed
         };
 
         createItem(newItem, type);
@@ -48,15 +62,18 @@ const CollapsibleList = ({
         setNewValue("");
     };
 
-    const { delShape } = useShapeStore();
-
     const handleRemoveItem = (node: GraphNode) => {
-        delShape(node.id);
+        const nodeShape: Shape | undefined = shapes.find(
+            (shape) => shape.nodeId === node.id && shape.nodeType === type
+        );
+
+        if (nodeShape) delShape(nodeShape.shapeId);
+
         removeItem(node, type);
     };
 
     return (
-        <div className="w-full  bg-neutral-800 text-white border-l border-neutral-700 rounded-xl shadow-md">
+        <div className="w-full bg-neutral-800 text-white border-l border-neutral-700 rounded-xl shadow-md">
             <div
                 className="flex items-center justify-between p-4 cursor-pointer select-none"
                 onClick={() => setIsOpen((prev) => !prev)}
@@ -68,26 +85,55 @@ const CollapsibleList = ({
             </div>
 
             <div
-                className={`transition-all duration-300 overflow-hidden ${
-                    isOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
-                }`}
+                className={`transition-all duration-300 overflow-hidden ${isOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+                    }`}
             >
-                <div className="flex flex-wrap justify-start items-center gap-3 p-3">
-                    {items.map((item) => (
-                        <Item
-                            key={item.id}
-                            item={item}
-                            onRemove={handleRemoveItem}
-                            type={type}
-                            permitSelection={type === NodeType.FACILITY}
-                        />
-                    ))}
+                <div className="flex flex-wrap justify-start items-start gap-3 p-3">
+                    {items.map((item) => {
+                        const isDemand = handleCostSubmit !== undefined;
 
-                    <div className="
-                        w-16 h-16 flex items-center justify-center
-                        border border-green-500 bg-zinc-700 rounded-lg 
-                        hover:bg-zinc-600 cursor-pointer transition
-                    ">
+                        let n: FacilityDemand | undefined;
+
+                        if (
+                            isDemand &&
+                            selectedFacility &&
+                            (selectedFacility as FacilityNode).demand
+                        ) {
+                            const facility = selectedFacility as FacilityNode;
+                            n = facility.demand.find(d => d.id === item.id);
+                        }
+
+                        return (
+                            <div key={item.id} className="flex flex-col items-center">
+                                <Item
+                                    item={item}
+                                    type={type}
+                                    onRemove={handleRemoveItem}
+                                    permitSelection={true}
+                                />
+
+                                {selectedFacility &&
+                                    isDemand &&
+                                    formulation === Formulation.PMEDIAN &&
+                                    type === NodeType.CLIENT &&
+                                    n && (
+                                        <NodeCostEditor
+                                            key={`editor-${n.id}`}
+                                            node={n}
+                                            handleCostSubmit={handleCostSubmit}
+                                        />
+                                    )}
+                            </div>
+                        );
+                    })}
+
+                    <div
+                        className="
+                            w-16 h-16 flex items-center justify-center
+                            border border-green-500 bg-zinc-700 rounded-lg 
+                            hover:bg-zinc-600 cursor-pointer transition
+                        "
+                    >
                         {isEditing ? (
                             <input
                                 type="text"
@@ -99,7 +145,8 @@ const CollapsibleList = ({
                                     if (e.key === "Enter") handleSubmitNewItem();
                                     if (e.key === "Escape") setIsEditing(false);
                                 }}
-                                className="w-full h-full bg-transparent text-white text-center focus:outline-none placeholder-gray-400"
+                                className="w-full h-full bg-transparent text-white text-center 
+                                           focus:outline-none placeholder-gray-400"
                             />
                         ) : (
                             <span
