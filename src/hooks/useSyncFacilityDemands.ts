@@ -13,15 +13,16 @@ export const useSyncFacilityDemands = (clientNodes: GraphNode[]) => {
         const clientIds = new Set(clientNodes.map((c) => c.id));
 
         const updatedFacilities = facilityNodes.map((facility) => {
-            const currentDemand = facility.demand ?? [];
+            if (!("demand" in facility)) return facility;
+
+            const currentDemand = facility.demand;
+            const clientIds = new Set(clientNodes.map((c) => c.id));
 
             const missingClients = clientNodes.filter(
                 (client) => !currentDemand.some((d) => d.id === client.id)
             );
 
-            const filteredDemand = currentDemand.filter((d) =>
-                clientIds.has(d.id)
-            );
+            const filteredDemand = currentDemand.filter((d) => clientIds.has(d.id));
 
             if (
                 missingClients.length > 0 ||

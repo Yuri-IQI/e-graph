@@ -1,16 +1,18 @@
-import { GraphNode } from "@/types/nodes";
+import { FacilityNode, CoverageNode } from "@/types/nodes";
 import { create } from "zustand";
 
-type FacilityStoreState = {
-    facilityNodes: GraphNode[];
-    selectedFacility: GraphNode | null;
+type FacilityUnion = FacilityNode | CoverageNode;
 
-    selectFacility: (node: GraphNode) => void;
+type FacilityStoreState = {
+    facilityNodes: FacilityUnion[];
+    selectedFacility: FacilityUnion | null;
+
+    selectFacility: (node: FacilityUnion) => void;
     clearFacilitySelection: () => void;
 
-    setFacilities: (nodes: GraphNode[]) => void;
-    addFacility: (node: GraphNode) => void;
-    updateFacility: (updated: GraphNode) => void;
+    setFacilities: (nodes: FacilityUnion[]) => void;
+    addFacility: (node: FacilityUnion) => void;
+    updateFacility: (updated: FacilityUnion) => void;
     removeFacility: (id: number) => void;
 };
 
@@ -18,7 +20,7 @@ export const useFacilityStore = create<FacilityStoreState>((set, get) => ({
     facilityNodes: [],
     selectedFacility: null,
 
-    selectFacility: (node) => {set({ selectedFacility: node })},
+    selectFacility: (node) => set({ selectedFacility: node }),
     clearFacilitySelection: () => set({ selectedFacility: null }),
 
     setFacilities: (nodes) => {
@@ -34,33 +36,32 @@ export const useFacilityStore = create<FacilityStoreState>((set, get) => ({
         });
     },
 
-    addFacility: (node) => {
+    addFacility: (node) =>
         set((state) => ({
             facilityNodes: [...state.facilityNodes, node],
-        }));
-    },
+        })),
 
-    updateFacility: (updated) => {
+    updateFacility: (updated) =>
         set((state) => {
             const newFacilities = state.facilityNodes.map((f) =>
                 f.id === updated.id ? { ...updated } : f
             );
 
             const newSelected =
-                state.selectedFacility?.id === updated.id ? { ...updated } : state.selectedFacility;
+                state.selectedFacility?.id === updated.id
+                    ? { ...updated }
+                    : state.selectedFacility;
 
             return {
                 facilityNodes: newFacilities,
                 selectedFacility: newSelected,
             };
-        });
-    },
+        }),
 
-    removeFacility: (id) => {
+    removeFacility: (id) =>
         set((state) => ({
             facilityNodes: state.facilityNodes.filter((f) => f.id !== id),
             selectedFacility:
                 state.selectedFacility?.id === id ? null : state.selectedFacility,
-        }));
-    }
+        })),
 }));
