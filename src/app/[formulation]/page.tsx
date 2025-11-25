@@ -106,30 +106,42 @@ const FormulationPage = () => {
   const handleSolve = useCallback(() => {
     if (!type) return;
 
-    if (type === Formulation.PMEDIAN) {
-      setResult(
-        solveLocationProblem({
+    const solution =
+      type === Formulation.PMEDIAN
+        ? solveLocationProblem({
           type,
           facilitiesPM: facilityNodes as FacilityNode[],
           p: facilityLimit
         })
-      );
-      return;
-    }
-
-    if (type === Formulation.MCLP) {
-      setResult(
-        solveLocationProblem({
+        : solveLocationProblem({
           type,
           facilitiesMC: facilityNodes as CoverageNode[],
           demandsMC: clientNodes as CoverageDemand[],
           radius: coverageRange,
           p: facilityLimit
-        })
-      );
-      return;
-    }
-  }, [type, facilityNodes, clientNodes, coverageRange, facilityLimit]);
+        });
+
+    setResult(solution);
+
+    if (!solution?.bestFacilities) return;
+
+    solution.bestFacilities.forEach((id) => {
+      const facility = facilityNodes.find((f) => f.id !== id);
+      if (!facility) return;
+
+      updateFacility({
+        ...facility,
+        isPlaced: false
+      });
+    });
+  }, [
+    type,
+    facilityNodes,
+    facilityLimit,
+    clientNodes,
+    coverageRange,
+    updateFacility
+  ]);
 
   const clearModel = useCallback(() => {
     useClientStore.getState().setClients([]);

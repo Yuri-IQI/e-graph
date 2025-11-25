@@ -3,17 +3,6 @@ import { getCombinations } from "./common";
 
 import { FacilityNode } from "@/types/nodes";
 
-export const extractClientWeights = (
-    facilities: FacilityNode[]
-): number[] | null => {
-
-    const reference = facilities.find(f => f.demand.length > 0);
-    if (!reference) return null;
-
-    const sorted = [...reference.demand].sort((a, b) => a.id - b.id);
-    return sorted.map(d => d.cost);
-};
-
 export const buildCostMatrix = (
     facilities: FacilityNode[]
 ): number[][] | null => {
@@ -40,8 +29,7 @@ export const buildCostMatrix = (
 
 export const solvePMedian = (
     costMatrix: number[][],
-    p: number,
-    clientWeights: number[]
+    p: number
 ): SolutionSet => {
 
     const nClients = costMatrix.length;

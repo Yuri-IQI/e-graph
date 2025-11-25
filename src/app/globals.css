@@ -2,7 +2,7 @@
 @import "leaflet/dist/leaflet.css";
 
 :root {
-  --background: #ffffff;
+  --background: #333333;
   --foreground: #171717;
 
   --button-hover-bg: lab(77.29% 1.12 -21.86);
@@ -17,7 +17,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --background: #1c1c1c;
     --foreground: #ededed;
     
     --button-hover-bg: lab(14 0.27 -5.68);

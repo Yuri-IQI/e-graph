@@ -1,4 +1,3 @@
-// src/components/LeafletMap/LeafletMap.tsx
 "use client";
 
 import React, { useCallback, useEffect, useMemo } from "react";

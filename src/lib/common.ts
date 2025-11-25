@@ -1,6 +1,6 @@
 import { Formulation } from "@/types/enums/formulation.enum";
-import { CoverageDemand, CoverageNode, FacilityDemand, FacilityNode, GraphNode } from "@/types/nodes";
-import { buildCostMatrix, extractClientWeights, solvePMedian } from "./solvePMedian";
+import { CoverageDemand, CoverageNode, FacilityNode } from "@/types/nodes";
+import { buildCostMatrix, solvePMedian } from "./solvePMedian";
 import { buildCoverageMatrix, solveMCLP } from "./solveMCLP";
 import { SolutionSet } from "@/types/assignment";
 
@@ -35,8 +35,7 @@ export const solveLocationProblem = ({
         if (!facilitiesPM || !facilitiesPM.length) return null;
         return solvePMedian(
             buildCostMatrix(facilitiesPM)!,
-            p,
-            extractClientWeights(facilitiesPM)!
+            p
         );
     }
 
@@ -49,11 +48,8 @@ export const solveLocationProblem = ({
             radius!
         );
 
-        const res = solveMCLP(coverageMatrix, p);
-
-        return res;
+        return solveMCLP(coverageMatrix, p);
     }
-
 
     console.warn(`[solveLocationProblem] Unknown type`, type);
     return null;

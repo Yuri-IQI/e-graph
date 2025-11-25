@@ -24,7 +24,7 @@ const Header = ({ type, selectNewType, facilityLimit, handleFacilityLimitChange,
                         focus:outline-none focus:ring-2 focus:ring-stone-400
                         focus:border-transparent text-center text-2xl font-extrabold
                         transition-colors duration-150
-                      "
+                    "
                     aria-label="Formulation"
                 >
                     <option value="" disabled hidden>
@@ -36,10 +36,10 @@ const Header = ({ type, selectNewType, facilityLimit, handleFacilityLimitChange,
                             key={value}
                             value={value}
                             className="
-                            bg-neutral-900 text-white
-                            hover:bg-balck-700 focus:bg-black-700
-                            cursor-pointer
-                          "
+                                bg-neutral-900 text-white
+                                hover:bg-balck-700 focus:bg-black-700
+                                cursor-pointer
+                            "
                         >
                             {value}
                         </option>

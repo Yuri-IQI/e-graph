@@ -26,6 +26,8 @@ const Canvas: React.FC<CanvasProps> = ({ radius, solution }) => {
 
     const { activeAction, clearActionSelection } = useCanvasActionStore();
     const { shapes, addShape, updateShape, delShape } = useShapeStore();
+    const { clientNodes, selectedClient, updateClient  } = useClientStore();
+    const { facilityNodes, selectedFacility, updateFacility } = useFacilityStore();
 
     const updateNodeInStore = useCallback(
         (nodeType: NodeType, node: GraphNode, posX: number | null, posY: number | null) => {
@@ -37,7 +39,7 @@ const Canvas: React.FC<CanvasProps> = ({ radius, solution }) => {
                     isPlaced: posX !== null,
                     cost: (node as CoverageDemand).cost ?? 0
                 };
-                useClientStore.getState().updateClient(updated);
+                updateClient(updated);
             } else if (nodeType === NodeType.FACILITY) {
                 const updated: CoverageNode = {
                     ...(node as CoverageNode),
@@ -45,10 +47,10 @@ const Canvas: React.FC<CanvasProps> = ({ radius, solution }) => {
                     posY,
                     isPlaced: posX !== null
                 };
-                useFacilityStore.getState().updateFacility(updated);
+                updateFacility(updated);
             }
         },
-        []
+        [updateClient, updateFacility]
     );
 
     useEffect(() => {
@@ -66,8 +68,6 @@ const Canvas: React.FC<CanvasProps> = ({ radius, solution }) => {
         if (activeAction !== ActionEnum.AUTO_ALLOCATE) return;
 
         const handleAutoAllocateFacilities = () => {
-            const { clientNodes } = useClientStore.getState();
-
             const demandCoverages = clientNodes.filter(
                 (node): node is ClientUnion & { posX: number; posY: number } =>
                     "posX" in node && "posY" in node
@@ -93,14 +93,14 @@ const Canvas: React.FC<CanvasProps> = ({ radius, solution }) => {
                 return;
             }
 
-            const facilities = useFacilityStore.getState().facilityNodes;
+            const facilities = facilityNodes;
             const moveCount = Math.min(facilities.length, bestPositions.length);
 
             for (let i = 0; i < moveCount; i++) {
                 const f = facilities[i];
                 const pos = bestPositions[i];
 
-                useFacilityStore.getState().updateFacility({
+                updateFacility({
                     ...f,
                     posX: pos.x,
                     posY: pos.y
@@ -121,7 +121,7 @@ const Canvas: React.FC<CanvasProps> = ({ radius, solution }) => {
 
         handleAutoAllocateFacilities();
         clearActionSelection();
-    }, [activeAction, clearActionSelection, radius]);
+    }, [activeAction, clearActionSelection, clientNodes, facilityNodes, radius, updateFacility]);
 
     const handleCanvasClick = (e: KonvaEventObject<MouseEvent>) => {
         if (
@@ -137,8 +137,8 @@ const Canvas: React.FC<CanvasProps> = ({ radius, solution }) => {
 
         const isClient = activeAction === ActionEnum.POSITION_CLIENT;
         const selectedNode = isClient
-            ? useClientStore.getState().selectedClient
-            : useFacilityStore.getState().selectedFacility;
+            ? selectedClient
+            : selectedFacility;
 
         if (!selectedNode) return;
 
@@ -164,8 +164,8 @@ const Canvas: React.FC<CanvasProps> = ({ radius, solution }) => {
 
         const storeNode =
             s.nodeType === NodeType.CLIENT
-                ? useClientStore.getState().clientNodes.find((c) => c.id === s.nodeId)
-                : useFacilityStore.getState().facilityNodes.find((f) => f.id === s.nodeId);
+                ? clientNodes.find((c) => c.id === s.nodeId)
+                : facilityNodes.find((f) => f.id === s.nodeId);
 
         if (storeNode) updateNodeInStore(s.nodeType, storeNode, x, y);
     };
@@ -177,16 +177,16 @@ const Canvas: React.FC<CanvasProps> = ({ radius, solution }) => {
 
         const storeNode =
             s.nodeType === NodeType.CLIENT
-                ? useClientStore.getState().clientNodes.find((c) => c.id === s.nodeId)
-                : useFacilityStore.getState().facilityNodes.find((f) => f.id === s.nodeId);
+                ? clientNodes.find((c) => c.id === s.nodeId)
+                : facilityNodes.find((f) => f.id === s.nodeId);
 
         if (storeNode) updateNodeInStore(s.nodeType, storeNode, null, null);
     };
 
     const getNodeData = (s: Shape) => {
         return s.nodeType === NodeType.CLIENT
-            ? useClientStore.getState().clientNodes.find((c) => c.id === s.nodeId)
-            : useFacilityStore.getState().facilityNodes.find((f) => f.id === s.nodeId);
+            ? clientNodes.find((c) => c.id === s.nodeId)
+            : facilityNodes.find((f) => f.id === s.nodeId);
     };
 
     const assignmentLines = useMemo(() => {
@@ -257,7 +257,9 @@ const Canvas: React.FC<CanvasProps> = ({ radius, solution }) => {
                                 {isFacility && radius > 0 && (
                                     <Circle
                                         radius={radius}
-                                        fill="rgba(156,146,126,0.23)"
+                                        fill={node.isPlaced
+                                            ? "rgba(142, 156, 126, 0.23)"
+                                            : "rgba(161, 90, 78, 0.1)"}
                                         stroke="rgba(214,193,193,0.4)"
                                         strokeWidth={2}
                                         listening={false}
@@ -270,7 +272,7 @@ const Canvas: React.FC<CanvasProps> = ({ radius, solution }) => {
                                         ? "#6c839bff"
                                         : node.isPlaced
                                             ? "#90bd78ff"
-                                            : "#999677ff"
+                                            : "#bc8f7cff"
                                     }
                                     stroke="#ffffff"
                                 />
