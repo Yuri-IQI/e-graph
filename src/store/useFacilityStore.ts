@@ -1,7 +1,7 @@
 import { FacilityNode, CoverageNode } from "@/types/nodes";
 import { create } from "zustand";
 
-type FacilityUnion = FacilityNode | CoverageNode;
+export type FacilityUnion = FacilityNode | CoverageNode;
 
 type FacilityStoreState = {
     facilityNodes: FacilityUnion[];

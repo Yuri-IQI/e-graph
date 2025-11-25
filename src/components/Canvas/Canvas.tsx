@@ -103,8 +103,7 @@ const Canvas: React.FC<CanvasProps> = ({ radius, solution }) => {
                 useFacilityStore.getState().updateFacility({
                     ...f,
                     posX: pos.x,
-                    posY: pos.y,
-                    isPlaced: true
+                    posY: pos.y
                 });
 
                 const shape = useShapeStore

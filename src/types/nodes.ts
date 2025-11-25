@@ -1,3 +1,32 @@
+export function isCoverageDemand(node: GraphNode): node is CoverageDemand {
+    return (
+        node !== null &&
+        typeof node === 'object' &&
+        'posX' in node &&
+        'posY' in node &&
+        'cost' in node
+    );
+}
+
+export function isFacilityDemand(node: GraphNode): node is FacilityDemand {
+    return (
+        node !== null &&
+        typeof node === 'object' &&
+        'cost' in node &&
+        !('posX' in node) &&
+        !('posY' in node)
+    );
+}
+
+export function isCoverageNode(node: GraphNode): node is CoverageNode {
+    return (
+        node !== null &&
+        typeof node === 'object' &&
+        'posX' in node &&
+        'posY' in node
+    );
+}
+
 export interface GraphNode {
     id: number;
     value: string;

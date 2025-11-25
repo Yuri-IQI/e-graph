@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { Formulation } from "@/types/enums/formulation.enum";
 import { NodeType } from "@/types/enums/nodeType.enum";
@@ -18,6 +18,20 @@ import { SolutionSet } from "@/types/assignment";
 import { solveLocationProblem } from "@/lib/common";
 import Header from "@/components/Header/Header";
 import { useShapeStore } from "@/store/useShapeStore";
+import dynamic from "next/dynamic";
+import { useMapDisplayStore } from "@/store/useMapDisplayStore";
+
+const LeafletMap = dynamic(
+  () => import("@/components/LeafletMap/LeafletMap"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-[600px] flex items-center justify-center border border-gray-600 rounded-lg">
+        <div className="text-white text-lg">Loading map...</div>
+      </div>
+    )
+  }
+);
 
 const FormulationPage = () => {
   const searchParams = useSearchParams();
@@ -30,6 +44,8 @@ const FormulationPage = () => {
   const [coverageRange, setCoverageRange] = useState(0);
 
   const [result, setResult] = useState<SolutionSet | null>(null);
+
+  const { isShowing } = useMapDisplayStore();
 
   const {
     clientNodes,
@@ -51,12 +67,33 @@ const FormulationPage = () => {
 
   const addNode = useCallback((node: GraphNode, nodeType: NodeType) => {
     if (nodeType === NodeType.CLIENT) {
-      addClient(node as FacilityDemand);
+      if (type === Formulation.MCLP) {
+        const coverageClient: CoverageDemand = {
+          ...node,
+          cost: 0,
+          posX: null,
+          posY: null,
+          isPlaced: false
+        };
+        addClient(coverageClient);
+      } else {
+        addClient(node as FacilityDemand);
+      }
     } else {
-      const newFacility: FacilityNode = { ...node, isPlaced: false, demand: [] };
-      addFacility(newFacility);
+      if (type === Formulation.MCLP) {
+        const newFacility: CoverageNode = {
+          ...node,
+          isPlaced: false,
+          posX: null,
+          posY: null
+        };
+        addFacility(newFacility);
+      } else {
+        const newFacility: FacilityNode = { ...node, isPlaced: false, demand: [] };
+        addFacility(newFacility);
+      }
     }
-  }, [addClient, addFacility]);
+  }, [addClient, addFacility, type]);
 
   const delNode = useCallback((node: GraphNode, nodeType: NodeType) => {
     if (nodeType === NodeType.CLIENT) {
@@ -124,7 +161,7 @@ const FormulationPage = () => {
 
   const handleCoverageRangeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const v = Number(e.target.value);
-    setCoverageRange(Number.isNaN(v) ? 1 : Math.max(1, Math.floor(v)));
+    setCoverageRange(Number.isNaN(v) ? 0 : v);
   }, []);
 
   const handleCostSubmit = useCallback(
@@ -157,6 +194,25 @@ const FormulationPage = () => {
     [selectedFacility, handleCostSubmit]
   );
 
+  const { toggleMap } = useMapDisplayStore();
+
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === 'm') {
+        e.preventDefault();
+        toggleMap();
+      }
+    },
+    [toggleMap]
+  );
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleKeyDown]);
 
   if (type === null) {
     return <div className="p-10 text-gray-400">Loading...</div>;
@@ -192,7 +248,6 @@ const FormulationPage = () => {
 
         {type === Formulation.MCLP && (
           <div className="flex flex-col w-full max-w-5xl mt-10 space-y-4 transition-all duration-300">
-
             <div className="flex flex-row items-center justify-center gap-4">
               {Object.values(ActionEnum).map((act) => (
                 <CanvasButton
@@ -207,6 +262,17 @@ const FormulationPage = () => {
               <Canvas radius={coverageRange} solution={result} />
             </div>
 
+            {isShowing && (
+              <div className="w-full flex flex-col gap-2">
+                <LeafletMap
+                  radiusMeters={coverageRange}
+                  formulation={type}
+                  solution={result}
+                  defaultCenter={[-10.92, -37.05]}
+                  defaultZoom={13}
+                />
+              </div>
+            )}
           </div>
         )}
 
