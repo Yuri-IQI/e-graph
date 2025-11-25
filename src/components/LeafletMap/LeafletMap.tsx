@@ -29,7 +29,6 @@ import {
 } from "@/types/nodes";
 
 import { Shape } from "@/types/geometries/shape";
-import { autoAllocateByPairwiseMidpoints } from "@/lib/solveMCLP";
 
 delete (L.Icon.Default.prototype as any)?._getIconUrl;
 L.Icon.Default.mergeOptions({

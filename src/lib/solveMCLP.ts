@@ -27,7 +27,7 @@ export const buildCoverageMatrix = (
     );
 };
 
-export const autoAllocateByPairwiseMidpoints = (
+export const autoAllocate = (
     demands: CoverageDemand[],
     radius: number
 ): {

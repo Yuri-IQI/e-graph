@@ -13,7 +13,7 @@ import { NodeType } from "@/types/enums/nodeType.enum";
 import { CoverageDemand, CoverageNode, GraphNode } from "@/types/nodes";
 import { Shape } from "@/types/geometries/shape";
 import { DemandAssigment, SolutionSet } from "@/types/assignment";
-import { autoAllocateByPairwiseMidpoints } from "@/lib/solveMCLP";
+import { autoAllocate } from "@/lib/solveMCLP";
 
 interface CanvasProps {
     radius: number;
@@ -86,7 +86,7 @@ const Canvas: React.FC<CanvasProps> = ({ radius, solution }) => {
             }
 
             const { bestPositions } =
-                autoAllocateByPairwiseMidpoints(demandCoverages, radius);
+                autoAllocate(demandCoverages, radius);
 
             if (!bestPositions.length) {
                 console.warn("Auto allocation returned no positions.");
